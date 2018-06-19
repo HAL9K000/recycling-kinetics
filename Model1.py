@@ -13,9 +13,42 @@ import matplotlib.pyplot as plt
 
 x2ran=[]
 # All Notations for attributes follow as defined from MODEL.
-ftrack=30
+ftrack=30; alphatrack=0
 # Keeps track of the numbers of vesicles that haven't fused even once at the last time step.
-class ThirtyHz:
+
+class Alpha:
+    
+    def alphameasure(self):
+        global alphatrack
+        
+        for y in range(self.trps):
+          if (self.pref[y,3] == 0):
+            ch=math.exp(self.phsehalf*self.pref[y,2])
+            chec=ran.random()
+            if chec > ch:           #Vesicle must be recycled 
+               #self.pref[y,2]=0     #Number of times it has recycled gets reset to 0.
+               self.tracker[y]=0    #Fluorescence gets reset to 0.
+               self.pref[y,3]=1     #Ensure it never meets this filter condition again.
+               self.alphak.append(1)
+               self.alphak[-1]=len(self.alphak)
+               self.alphat.append(self.pref[y,1])
+               
+    def plotter(self):
+        self.alphat.sort()    #WHY AM I MUTHAFUKKING SORTING?
+        plt.plot(self.alphat,self.alphak, 'ro')
+        plt.xlabel("Time")
+        plt.ylabel("Vesicles Leaving RRP")
+        plt.savefig("Plot/AlphaKinetics1.png", dpi=200)
+        plt.show()
+        plt.close()
+        print "Madarjhat"
+        for x in self.alphak:
+            print x,
+        print "Time of alpha kinetics:"
+        for x in self.alphat:
+            print x,
+
+class ThirtyHz(Alpha):
    #EGFP-VAMP data gives decay graph of: 0.1395+0.851*e^(-0.0497*x) || alternatively rate= -0.0642 || 0.1777+0.828*e^(-0.0908*x)
     
     def __init__(self):
@@ -37,18 +70,22 @@ class ThirtyHz:
         self.unfsze=0           #Keeps count of number of unfused vesicles
         self.fuskr=0            #Keeps count of number of vesicles that fuse and run.
         self.fulfs=0            #Keeps count of number of vesicles that undergo full fusion.
-        self.pref=np.zeros([self.trps,3])  
+        self.pref=np.zeros([self.trps,4])  
         '''Keeps track of changes taking place in vesicles, with 1st column storing kind of fusion ("100" for k&r, "200" for full fusion,
         "300" for TRP), 2nd column noting exact time of this occuring and the 3rd one noting the number of such consecutive fusions. '''
         self.pref[:,2]=0
+        self.phsehalf= -math.log(2)/8            #Chosen rate of replacement of ageing SV (half-time= 8 cycles)
         self.fsum=[]
-        self.time=[]
+        self.ftime=[]
+        self.alphak=[]                  #Stores the number of vesicles that have been extinguished at any one point.
+        self.alphat=[]
         
     def intpr(self):
-        print "\n",self.x," ",
-        print self.x2," "
+        print "\n RRP Size:",self.x," ",
+        print "Prob. of Full Scale Fusion:",self.x2," "
         for x in self.tracker:
             print x," ",
+        print "\nDetails on all the vesicles at the end:"
         for x in self.pref:
             print x
         
@@ -112,12 +149,14 @@ class ThirtyHz:
                 else: pass                                  # THIS DOES NOT ACCOMODATE FOR FUSIONS 1st FUSION
                 
         ThirtyHz.plotter(self)
+        Alpha.plotter(self)
                     
             
     def updateparam(self):
         self.firstfusiontracker()
         self.activatehash()
         self.checkhash()
+        
         self.fluores()
         
         
@@ -128,9 +167,11 @@ class ThirtyHz:
             if(self.pref[y,0]==100 and (m+0.9-self.t)<self.dt):
                 self.pref[y,0]=300
                 self.pref[y,1]+=0.9         #Update to reflect time of entering TRP
+                self.alphameasure()
             elif(self.pref[y,0]==200 and (m+20-self.t)<self.dt):
                 self.pref[y,0]=300
                 self.pref[y,1]+=20          #Update to reflect time of entering TRP
+                self.alphameasure()
             else: continue
         
     def checkhash(self):                #Check whether a given vesicle remains in TRP or refuses and updates matrices accordingly. 
@@ -153,16 +194,17 @@ class ThirtyHz:
                        discharged and updating accordingly.'''
                else: continue
            
-            
+
+  
     def fluores(self):
         f=0
         for y in range(self.trps):
             f+=self.tracker[y]
         self.fsum.append(f)
-        self.time.append(self.t)
+        self.ftime.append(self.t)
         
     def plotter(self):
-        plt.plot(self.time,self.fsum, 'c-')
+        plt.plot(self.ftime,self.fsum, 'c-')
         plt.xlabel("Time")
         plt.ylabel("Flourescence")
         plt.savefig("Plot/Destaining1.png", dpi=200)
@@ -177,6 +219,7 @@ class ThirtyHz:
             x+=self.x2_stepsize
         else:
             return x2ran
+        
         
 obj=ThirtyHz()
 if __name__=="__main__":
