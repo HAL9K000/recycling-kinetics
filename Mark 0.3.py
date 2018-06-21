@@ -25,7 +25,7 @@ class PointthreeHz:
         self.x2_high=0.19                   #Upper limit on full scale fusion
         self.x2=ran.choice(PointthreeHz.x2range(self))            #Chosen extent of full scale fusion
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
-        self.gamma= -0.04158                                    #Look up the model for meanings of specific parameters 
+        self.gamma= -0.04159                                    #Look up the model for meanings of specific parameters 
         self.lambd= -0.00423
         self.alphpr= -0.017
         self.ep= (self.gamma*self.lambd)/(self.gamma+self.lambd)
@@ -46,7 +46,7 @@ class PointthreeHz:
         print "x :=", self.x, "\tx2 :=", self.x2 ,"\nInitially:"
         for x in range(self.trps):
             print self.pref[x]
-        for x in range(0,600):
+        for x in range(0,800):
             self.updateparam()
             self.t+=self.dt
         for x in self.pref:
@@ -62,7 +62,7 @@ class PointthreeHz:
         
     def rcp_rrp(self):                     #Determines how many vesicles have moved out from RCP to RRP based on kinetic data.
         global eptrack
-        retain= (self.trps-self.x)*(0.6895+ 0.3105*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(0.6895+ 0.3105*math.exp(self.ep*self.t))*(1-self.x/self.trps)
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (eptrack-retain >=1):
