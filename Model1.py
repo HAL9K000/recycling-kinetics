@@ -59,7 +59,7 @@ class ThirtyHz(Alpha):
         self.x2_stepsize=0.01
         self.x2_high=0.51                   #Upper limit on full scale fusion
         self.x2=ran.choice(ThirtyHz.x2range(self))            #Chosen extent of full scale fusion
-        self.x1= float(self.x - self.x2)                      #Chosen extent of kiss and run
+        self.x1= float(1 - self.x2)                      #Chosen extent of kiss and run
         self.bk= -0.0497                                    #Chosen rate of first fusion
         self.glbk= -0.038                                   #Chosen rate of reuse
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)

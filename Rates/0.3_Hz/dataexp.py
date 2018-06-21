@@ -9,8 +9,8 @@ import os
 import numpy as np
 import math
 
-gamma= 0.2*0.3
-lambd=0.00423
+gamma= 0.01386*3 # [ln(2)/(3/(0.2*0.3))], where 3/(0.2*0.3) is the half time (time taken for three vesicles to fuse)
+lambd=0.00424
 # EGFP-VAMP Data for 0.3Hz after 100s cutoff: 0.209+0.650*e^(-0.00241x); -0.00241 +/- 0.00015
 
 def C():
