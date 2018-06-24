@@ -10,6 +10,7 @@ import math
 import matplotlib.pyplot as plt
 import os
 import random as ran
+from scipy.optimize import curve_fit
 
 eptrack=0
 
@@ -135,29 +136,50 @@ class PointthreeHz:
         self.fsum.append(f)
         self.ftime.append(self.t)
         
+    def f(self, x,a,b,c):             #Used by curve-fitting algorithm
+        return a+ b*np.exp(-c*x)
+        
     def accountancy(self):          #Plots and saves various generated results.
         os.chdir("Plot/0.3_Hz")
+        fm143=np.genfromtxt("0.3 Hz FM143.csv", delimiter=',')
+        fm143[:,1]*=30
+        plt.plot(fm143[:,0] ,fm143[:,1] , 'bo', markerfacecolor='none', markeredgecolor='b')
+        pop, pco = curve_fit(self.f, fm143[:,0], fm143[:,1], bounds=([15.0,0,0],[30.0,15.0, 0.05]))
+        plt.plot(fm143[:,0], self.f( fm143[:,0], *pop), 'c--', label='FM Fit: %5.4f + %5.4f*e^(-%5.4fx)\n' % tuple(pop))
+        #Plotting FM1-43 data.
         a=-self.alphpr; g=-self.gamma
         if (os.path.isdir("t_%f_t" %(self.dt))==False):
             os.mkdir("t_%f_t" %(self.dt))
         #Making various directories to store results, if they do not exist to begin with.
         os.chdir("t_%f_t" %(self.dt))
         if (os.path.isdir("alp_%f_g_%f" %(a, g))==False):
-            os.mkdir("alp_%f_g_%f" %(a, g))
-        
+            os.mkdir("alp_%f_g_%f" %(a, g)) 
         os.chdir("alp_%f_g_%f" %(a, g))
+        
+        if (os.path.isdir("rrp_%d_prob_%f" %(self.x, self.x2))==False):
+            os.mkdir("rrp_%d_prob_%f" %(self.x, self.x2)) 
+        os.chdir("rrp_%d_prob_%f" %(self.x, self.x2))
+        
+        
+        plt.plot(self.ftime , self.fsum, 'ro', markerfacecolor='none', markeredgecolor='r')
+        popt, pcov = curve_fit(self.f, self.ftime, self.fsum)
+        xdata=np.array(self.ftime)
+        plt.plot(xdata, self.f(xdata, *popt), 'm--', label='Th Fit: %5.4f + %5.4f*e^(-%5.4fx)' % tuple(popt))
+        plt.xlabel("Time")
+        plt.ylim(0,30)
+        plt.ylabel("Fluorescence")
+        plt.legend()
+        plt.savefig("Destaining.png", dpi=200)
+        plt.show()
+        plt.close()
+        
         
         f=open("log.txt", 'w')
         f.write("RRP Size: %d,\t Full Scale Fusion Scale: %f\n" %(self.x, self.x2))
         f.write("Alpha: %f,\t Gamma: %f,\t Lambda: %f\n" %(self.alphpr, self.gamma, self.lambd))
+        f.write("Theoretical Fit: %5.4f + %5.4f*e^(-%5.4fx)\n" % tuple(popt))
+        f.write("Optimum Fit: %5.4f + %5.4f*e^(-%5.4fx)" % tuple(pop))
         f.flush(); f.close() #Writing home some key parameter data to a file
-        
-        plt.plot(self.ftime , self.fsum, 'ro', markerfacecolor='none', markeredgecolor='r')
-        plt.xlabel("Time")
-        plt.ylabel("Flourescence")
-        plt.savefig("Destaining.png", dpi=200)
-        plt.show()
-        plt.close()
     
     def x2range(self):
         x=[]; i=self.x2_low

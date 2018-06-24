@@ -1,2 +1,0 @@
-RRP Size: 5,	 Full Scale Fusion Scale: 0.170000
-Alpha: -0.017000,	 Gamma: -0.041580,	 Lambda: -0.004230
