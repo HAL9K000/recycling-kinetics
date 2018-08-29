@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jun 20 11:15:58 2018
+Created on Mon Jul 30 12:56:36 2018
 
 @author: Koustav
 """
@@ -20,6 +20,7 @@ class PointthreeHz:
         global eptrack
         self.xrange=np.array([5,6,7,8,9,10])  #Possible values that RRP size can attain
         self.x=ran.choice(self.xrange)        #Choose one RRP size at random from xrange
+        self.x=10
         self.trps=30                        #Size of TRP
         self.x2_low=0.10                    #Lower limit on full scale fusion (but why such a value??)
         self.x2_stepsize=0.01
@@ -28,8 +29,8 @@ class PointthreeHz:
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
         self.gamma= -0.06                                    #Look up the model for meanings of specific parameters
         self.delta=-1.0/120                             #Stevens & Murphy, 2018
-        self.lambd= -0.00423
-        self.alphpr= -0.0194
+        self.lambd= -0.00406
+        self.alphpr= -0.0099
         self.ep= ((self.gamma+2*self.delta)*self.lambd)/(self.gamma+self.lambd)
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         self.tracker=np.ones(self.trps)                     #Setting up tracker for individual vesicles with each element containing initial fluorescence.
@@ -66,7 +67,7 @@ class PointthreeHz:
         
     def rcp_rrp(self):                     #Determines how many vesicles have moved out from RCP to RRP based on kinetic data.
         global eptrack
-        retain= (self.trps-self.x)*(0.6895+ 0.3105*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(0.88+ 0.12*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (eptrack-retain >=1):
@@ -175,14 +176,14 @@ class PointthreeHz:
         pop, pco = curve_fit(self.f, fm143[:,0], fm143[:,1], bounds=([15.0,0,0],[30.0,15.0, 0.05]))
         plt.plot(fm143[:,0], self.f( fm143[:,0], *pop), 'c--', label='FM Fit: %5.4f + %5.4f*e^(-%5.4fx)\n' % tuple(pop))
         #Plotting FM1-43 data.
-        a=-self.alphpr; g=-self.gamma
+        a=-self.alphpr; g=-self.gamma; d=-self.delta
         if (os.path.isdir("t_%f_t" %(self.dt))==False):
             os.mkdir("t_%f_t" %(self.dt))
         #Making various directories to store results, if they do not exist to begin with.
         os.chdir("t_%f_t" %(self.dt))
-        if (os.path.isdir("alp_%f_g_%f" %(a, g))==False):
-            os.mkdir("alp_%f_g_%f" %(a, g)) 
-        os.chdir("alp_%f_g_%f" %(a, g))
+        if (os.path.isdir("alp_%f_g_%f_d_%f" %(a, g, d))==False):
+            os.mkdir("alp_%f_g_%f_d_%f" %(a, g, d)) 
+        os.chdir("alp_%f_g_%f_d_%f" %(a, g, d))
         
         if (os.path.isdir("rrp_%d_prob_%f" %(self.x, self.x2))==False):
             os.mkdir("rrp_%d_prob_%f" %(self.x, self.x2)) 
@@ -205,7 +206,7 @@ class PointthreeHz:
         # Perform additional plots
         f=open("log.txt", 'w')
         f.write("RRP Size: %d,\t Full Scale Fusion Scale: %f\n" %(self.x, self.x2))
-        f.write("Alpha: %f,\t Gamma: %f,\t Lambda: %f\n" %(self.alphpr, self.gamma, self.lambd))
+        f.write("Alpha: %f,\t Gamma: %f,\t Lambda: %f\t Delta: %f\n" %(self.alphpr, self.gamma, self.lambd, -d))
         f.write("Theoretical Fit: %5.4f + %5.4f*e^(-%5.5fx)\n" % tuple(popt))
         f.write("Optimum Fit: %5.4f + %5.4f*e^(-%5.5fx)" % tuple(pop))
         f.flush(); f.close() #Writing home some key parameter data to a file

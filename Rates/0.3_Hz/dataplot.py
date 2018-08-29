@@ -16,13 +16,14 @@ def f(x,a,b,c):
 
 def main():
     gam=  0.06
-    lam= 0.00423
-    os.chdir("L_%f_g_%f_alpha" %(lam, gam))
+    lam= 0.00406
+    delt=1.0/120
+    os.chdir("L_%f_g_%f_alpha_%f_d" %(lam, gam, delt))
     data=np.genfromtxt("0.3 Hz Alpha Rate Data.csv",comments="#",delimiter=',',skip_footer=2)
     xdata=data[:,0]
     ydata=data[:,4]
     plt.plot(xdata,ydata, marker='o', markerfacecolor='none', markeredgecolor='b', label="Points")
-    popt, pcov = curvfit(f, xdata, ydata)
+    popt, pcov = curvfit(f, xdata, ydata, bounds=([0.0,0,0],[0.75,0.1, 0.05]))
     print popt
     plt.plot(xdata, f(xdata, *popt), 'c-', label='fit: %5.4f + %5.4f*e^(-%5.4fx)' % tuple(popt))
     plt.xlabel("Time")
