@@ -16,10 +16,10 @@ def f(x,a,b,c):
 
 def main():
     gam=  0.06
-    lam= 0.00406
+    lam= 0.00405
     delt=1.0/120
     os.chdir("L_%f_g_%f_alpha_%f_d" %(lam, gam, delt))
-    data=np.genfromtxt("0.3 Hz Alpha Rate Data.csv",comments="#",delimiter=',',skip_footer=2)
+    data=np.genfromtxt("Pre 0.3 Hz Alpha Rate Data.csv",comments="#",delimiter=',',skip_footer=2)
     xdata=data[:,0]
     ydata=data[:,4]
     plt.plot(xdata,ydata, marker='o', markerfacecolor='none', markeredgecolor='b', label="Points")
@@ -29,7 +29,7 @@ def main():
     plt.xlabel("Time")
     plt.ylabel("dA/dt")
     plt.legend()
-    plt.savefig("Bestfit.png", dpi=200)
+    plt.savefig("Pre Bestfit.png", dpi=200)
     plt.show()
     plt.close()
 

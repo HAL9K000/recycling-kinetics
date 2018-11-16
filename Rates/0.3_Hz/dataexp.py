@@ -20,7 +20,7 @@ delta=1.0/120
 def C():
     global gamma
     os.chdir("../../../Data/SVFR Decay Rates")
-    svfr=np.genfromtxt("0.3 Hz SVFR Decay.csv", delimiter=",")
+    svfr=np.genfromtxt("Predicted 0.3 Hz SVFR Decay.csv", delimiter=",")
     dC(svfr)
     
 def dC(svfr):
@@ -52,15 +52,16 @@ def dC(svfr):
     for x in output:
         print output
     os.chdir("../../Code/Rates/0.3_Hz")
-    os.mkdir("L_%f_g_%f_alpha_%f_d" %(lambd, gamma, delta))
+    if (os.path.isdir("L_%f_g_%f_alpha_%f_d" %(lambd, gamma, delta))== False):
+        os.mkdir("L_%f_g_%f_alpha_%f_d" %(lambd, gamma, delta))
     os.chdir("L_%f_g_%f_alpha_%f_d" %(lambd, gamma, delta))
-    np.savetxt('0.3 Hz Alpha Rate Data.csv', output, delimiter=",", header="0:Time, 1:C, 2:dC/dt, 3:eB, 4:dA/dt",comments="#")
+    np.savetxt('Pre 0.3 Hz Alpha Rate Data.csv', output, delimiter=",", header="0:Time, 1:C, 2:dC/dt, 3:eB, 4:dA/dt",comments="#")
         
 def Bgen(t):
         global lambd; global gamma; global delta
         ep= ((gamma+2*delta)*lambd)/(gamma+lambd)
         print "ep:",ep
-        b0=24
+        b0=25
         eB=[]
         for x in range(0,len(t)):
             b=ep*b0*(0.209+0.650*math.exp(-ep*t[x]))

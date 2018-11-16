@@ -13,24 +13,33 @@ import random as ran
 from scipy.optimize import curve_fit
 
 eptrack=0
-
+'''
+SVFR Data (Best Fit):
+    0.3 Hz: 0.687+0.125*e^(-0.00768*x)
+    1   Hz: 0.476+0.239*e^(-0.00456*x)
+    3   Hz: 0.420+0.302*e^(-0.00571*x)
+    10  Hz: 0.178+0.370*e^(-0.01489*x)
+    30  Hz: 0.237+0.246*e^(-0.0538*x)
+    General Relation b/w half-time(T) and f: T= 9.9073+ 166.718*e^(-0.1452*f)
+'''
 class PointthreeHz:
 # From EGFP-VAMP Data, we have, best fit: 0.3191 + 0.6456e^(-0.0406*x)   
     def __init__(self):
         global eptrack
         self.xrange=np.array([5,6,7,8,9,10])  #Possible values that RRP size can attain
         self.x=ran.choice(self.xrange)        #Choose one RRP size at random from xrange
-        self.x=10
+        self.x=5
         self.trps=30                        #Size of TRP
         self.x2_low=0.10                    #Lower limit on full scale fusion (but why such a value??)
         self.x2_stepsize=0.01
         self.x2_high=0.19                   #Upper limit on full scale fusion
         self.x2=ran.choice(PointthreeHz.x2range(self))            #Chosen extent of full scale fusion
+        self.x2= 0.15
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
         self.gamma= -0.06                                    #Look up the model for meanings of specific parameters
         self.delta=-1.0/120                             #Stevens & Murphy, 2018
         self.lambd= -0.00406
-        self.alphpr= -0.0099
+        self.alphpr= -0.0025
         self.ep= ((self.gamma+2*self.delta)*self.lambd)/(self.gamma+self.lambd)
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         self.tracker=np.ones(self.trps)                     #Setting up tracker for individual vesicles with each element containing initial fluorescence.
@@ -67,7 +76,7 @@ class PointthreeHz:
         
     def rcp_rrp(self):                     #Determines how many vesicles have moved out from RCP to RRP based on kinetic data.
         global eptrack
-        retain= (self.trps-self.x)*(0.88+ 0.12*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(0.92+ 0.08*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (eptrack-retain >=1):
@@ -88,7 +97,7 @@ class PointthreeHz:
                 #Vesicle has been undocked to RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=0.6895+ 0.3105*math.exp(self.ep*m)
+                ch=0.92+ 0.08*math.exp(self.ep*m)
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
@@ -102,7 +111,7 @@ class PointthreeHz:
                 if( ran.random() > ch):
                     #Vesicle is undocked from RRP to RCP
                     self.pref[y,0]=0
-                    self.pref[y,1]=self.t   #Updating time of entry to RRP.
+                    self.pref[y,1]=self.t   #Updating time of entry to RCP.
                     print "BC"
                     continue #Move to next iteration
                     print "CD"
@@ -118,6 +127,7 @@ class PointthreeHz:
                             self.tracker[y]=0                #Setting fluorescence parameter to be 0
                         elif (chec > self.x2):            # K&R fusion has taken place.
                             self.pref[y,0]=100
+                            #self.tracker[y]*= math.exp(self.deprt*0.1*9)
                             self.tracker[y]*= math.exp(self.deprt*0.1*ran.choice(range(6,10)))
                             '''Taking time of kiss and run to be 0.6-0.9, calculating amount of fluorescence
                             discharged and updating accordingly.'''

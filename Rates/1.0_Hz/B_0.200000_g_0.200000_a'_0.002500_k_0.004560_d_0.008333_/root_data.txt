@@ -1,0 +1,4 @@
+Possible Roots:
+ Alpha=9.0637;	 Alpha=0.0019
+Other Data: 
+ Alpr: 0.002500,	 Beta=0.200000,	 Gamma: 0.200000,	 Delta: 0.008333,	 K: 0.004560
