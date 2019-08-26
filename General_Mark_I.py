@@ -20,20 +20,22 @@ class GeneralOne:
         global eptrack
         self.xrange=np.array([5,6,7,8,9,10])  #Possible values that RRP size can attain
         self.x=ran.choice(self.xrange)        #Choose one RRP size at random from xrange
+        self.x=5
         self.trps=30                        #Size of TRP
-        self.x2_low=0.00                    #Lower limit on full scale fusion (but why such a value??)
+        self.x2_low=0.10                    #Lower limit on full scale fusion (but why such a value??)
         self.x2_stepsize=0.01
-        self.x2_high=0.00                   #Upper limit on full scale fusion
+        self.x2_high=0.15                   #Upper limit on full scale fusion
         self.x2=ran.choice(GeneralOne.x2range(self))            #Chosen extent of full scale fusion
+        self.x2=0.05
         #self.x2= 0.15
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
-        self.gamma= -0.00                                    #Look up the model for meanings of specific parameters
+        self.gamma= -0.2                                    #Look up the model for meanings of specific parameters
         self.delta=-1.0/120                             #Stevens & Murphy, 2018
         #self.deltap=
-        self.lambd= -0.00456
+        self.lambd= -0.0056
         self.alph=-0.0019
         self.alphpr= -0.0025
-        self.beta= -0.00
+        self.beta= -0.1667
         self.ep= (self.lambd*((self.delta/(self.gamma))+(self.gamma)/(self.gamma+self.delta)))
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         self.tracker=np.ones(self.trps)                     #Setting up tracker for individual vesicles with each element containing initial fluorescence.
@@ -93,7 +95,7 @@ class GeneralOne:
                 #Vesicle has been undocked to RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=0.66587+ 0.2391*math.exp(self.ep*self.m)
+                ch=0.66587+ 0.2391*math.exp(self.ep*m)
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
@@ -208,7 +210,7 @@ class GeneralOne:
         os.chdir("Plot")
         if( os.path.isdir(self.str)==False):
             os.mkdir(self.str)
-        os.mkdir(self.str)
+        os.chdir(self.str)
         fm143=np.genfromtxt("%s FM143.csv" %(self.str), delimiter=',')
         fm143[:,1]*=30
         plt.plot(fm143[:,0] ,fm143[:,1] , 'bo', markerfacecolor='none', markeredgecolor='b')
@@ -271,3 +273,9 @@ class GeneralOne:
             x.append(i)
             i+=self.x2_stepsize
         return x
+    
+
+obj=GeneralOne()    
+if __name__ == "__main__":
+    
+    obj.controlpanel()
