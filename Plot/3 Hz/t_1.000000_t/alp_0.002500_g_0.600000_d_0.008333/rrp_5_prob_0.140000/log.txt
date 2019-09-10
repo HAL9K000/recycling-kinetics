@@ -1,0 +1,4 @@
+RRP Size: 5,	 Full Scale Fusion Scale: 0.140000
+Alpha: -0.003100,	 Gamma: -0.600000,	 Lambda: -0.013200	 Delta: -0.008333
+Theoretical Fit: 16.8453 + 11.7179*e^(-0.00960x)
+Optimum Fit: 17.8664 + 12.3161*e^(-0.00807x)

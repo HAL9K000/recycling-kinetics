@@ -14,6 +14,83 @@ from scipy.optimize import curve_fit
 
 eptrack=0
 
+
+'''
+
+For 1 Hz:
+    
+    self.x=5
+    self.x2= 0.05
+    self.lambd= -0.0056
+    self.alph=-0.0019
+    self.alphpr= -0.0025
+    
+    Retain Eq:
+        0.66587+ 0.2391*math.exp(self.ep*self.t)
+        
+        (Derived From SVFR)
+        
+For 3 Hz:
+    
+    self.x=5
+    self.x2=0.05
+    self.lambd=-0.0132
+    self.alph= -0.0031
+    self.alphr= -0.0025
+    self.ppr=0.5
+    
+    By Cubic Method:
+        
+       self.alph= -0.00375 OR -0.02719
+       
+    
+    Retain Eq:
+        0.5823+ 0.4177*math.exp(self.ep*self.t)
+        (Derived From SVFR)
+        
+    What actually works:
+        0.65+ 0.35*math.exp(self.ep*self.t)         (Inexplicable)
+        
+        self.x2=0.12
+        
+For 10 Hz:
+    
+    self.x=5
+    self.lambd=-0.0310
+    self.alph= -0.0114
+    self.alphr= -0.0025
+    
+    Using Cubic Eq:
+    
+        self.alph= -0.02809
+    
+    Retain Eq:
+        0.3252+ 0.6748*math.exp(self.ep*self.t)
+        (Derived From SVFR)
+        
+For 30 Hz:
+    
+    self.x=10
+    
+    self.lambd= -0.0621
+    self.alph= -0.0401
+    self.alphr= -0.0025
+    
+    Retain Eq:
+        0.49079+ 0.50920*math.exp(self.ep*self.t)
+        (Derived From SVFR)
+        
+    Using Cubic Eq:
+    
+        self.alph= -0.05549
+    
+        
+    
+        
+    
+    
+'''
+
 class GeneralOne:
     
     def __init__(self):
@@ -26,17 +103,22 @@ class GeneralOne:
         self.x2_stepsize=0.01
         self.x2_high=0.15                   #Upper limit on full scale fusion
         self.x2=ran.choice(GeneralOne.x2range(self))            #Chosen extent of full scale fusion
-        self.x2=0.05
+        #self.x2=0.05
+        print(self.x2)
         #self.x2= 0.15
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
-        self.gamma= -0.2                                    #Look up the model for meanings of specific parameters
+        self.gamma= -0.6                                    #Look up the model for meanings of specific parameters
         self.delta=-1.0/120                             #Stevens & Murphy, 2018
         #self.deltap=
-        self.lambd= -0.0056
-        self.alph=-0.0019
+        self.lambd= -0.0132
+        self.alph=-0.00375
         self.alphpr= -0.0025
         self.beta= -0.1667
-        self.ep= (self.lambd*((self.delta/(self.gamma))+(self.gamma)/(self.gamma+self.delta)))
+        self.ppr=0.5
+        self.epold= ((self.gamma+2*self.delta)*self.lambd)/(self.gamma+self.lambd)
+        print "Old Epsilon:\t%f" %(self.epold)
+        self.ep= (self.lambd/(self.gamma*(self.gamma+ self.lambd)))*((self.gamma)**2 + (self.ppr*self.delta)*(self.gamma+self.lambd))
+        print "Epsilon:\t%f" %(self.ep)
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         self.tracker=np.ones(self.trps)                     #Setting up tracker for individual vesicles with each element containing initial fluorescence.
         self.t=0              #Initial time
@@ -51,7 +133,7 @@ class GeneralOne:
         self.rrpsiz=[]
         self.endsiz=[]
         self.ftime=[]
-        self.str="1 Hz"             #For the purposes of making documentation easier.
+        self.str="3 Hz"             #For the purposes of making documentation easier.
         
     def controlpanel(self):
         print "RRP Size :=", self.x, "\tx2 :=", self.x2 ,"\nInitially.\n"
@@ -74,7 +156,7 @@ class GeneralOne:
         
     def lrcp_rrp(self):                     #Determines how many vesicles have moved out from unfused RCP to RRP based on kinetic data.
         global eptrack
-        retain= (self.trps-self.x)*(0.66587+ 0.2391*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(0.65+ 0.35*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (eptrack-retain >=1):
@@ -95,7 +177,7 @@ class GeneralOne:
                 #Vesicle has been undocked to RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=0.66587+ 0.2391*math.exp(self.ep*m)
+                ch=0.65+ 0.35*math.exp(self.ep*self.t)
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
@@ -217,7 +299,7 @@ class GeneralOne:
         pop, pco = curve_fit(self.f, fm143[:,0], fm143[:,1], bounds=([10.0,0,0],[30.0,20.0, 0.05]))
         plt.plot(fm143[:,0], self.f( fm143[:,0], *pop), 'c--', label='FM Fit: %5.4f + %5.4f*e^(-%5.4fx)\n' % tuple(pop))
         #Plotting FM1-43 data.
-        a=-self.alphpr; g=-self.gamma; d=-self.delta
+        a=-self.alph; g=-self.gamma; d=-self.delta
         if (os.path.isdir("t_%f_t" %(self.dt))==False):
             os.mkdir("t_%f_t" %(self.dt))
         #Making various directories to store results, if they do not exist to begin with.
@@ -247,7 +329,7 @@ class GeneralOne:
         # Perform additional plots
         f=open("log.txt", 'w')
         f.write("RRP Size: %d,\t Full Scale Fusion Scale: %f\n" %(self.x, self.x2))
-        f.write("Alpha: %f,\t Gamma: %f,\t Lambda: %f\t Delta: %f\n" %(self.alphpr, self.gamma, self.lambd, -d))
+        f.write("Alpha: %f,\t Gamma: %f,\t Lambda: %f\t Delta: %f\n" %(self.alph, self.gamma, self.lambd, -d))
         f.write("Theoretical Fit: %5.4f + %5.4f*e^(-%5.5fx)\n" % tuple(popt))
         f.write("Optimum Fit: %5.4f + %5.4f*e^(-%5.5fx)" % tuple(pop))
         f.flush(); f.close() #Writing home some key parameter data to a file
