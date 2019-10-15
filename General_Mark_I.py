@@ -101,17 +101,17 @@ class GeneralOne:
         self.trps=30                        #Size of TRP
         self.x2_low=0.10                    #Lower limit on full scale fusion (but why such a value??)
         self.x2_stepsize=0.01
-        self.x2_high=0.15                   #Upper limit on full scale fusion
+        self.x2_high=0.20                   #Upper limit on full scale fusion
         self.x2=ran.choice(GeneralOne.x2range(self))            #Chosen extent of full scale fusion
         #self.x2=0.05
         print(self.x2)
         #self.x2= 0.15
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
-        self.gamma= -0.6                                    #Look up the model for meanings of specific parameters
+        self.gamma= -2.0                                    #Look up the model for meanings of specific parameters
         self.delta=-1.0/120                             #Stevens & Murphy, 2018
         #self.deltap=
-        self.lambd= -0.0132
-        self.alph=-0.00375
+        self.lambd= -0.0310
+        self.alph=-0.02809
         self.alphpr= -0.0025
         self.beta= -0.1667
         self.ppr=0.5
@@ -133,7 +133,7 @@ class GeneralOne:
         self.rrpsiz=[]
         self.endsiz=[]
         self.ftime=[]
-        self.str="3 Hz"             #For the purposes of making documentation easier.
+        self.str="10 Hz"             #For the purposes of making documentation easier.
         
     def controlpanel(self):
         print "RRP Size :=", self.x, "\tx2 :=", self.x2 ,"\nInitially.\n"
@@ -156,7 +156,7 @@ class GeneralOne:
         
     def lrcp_rrp(self):                     #Determines how many vesicles have moved out from unfused RCP to RRP based on kinetic data.
         global eptrack
-        retain= (self.trps-self.x)*(0.65+ 0.35*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(0.3252+ 0.6748*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (eptrack-retain >=1):
@@ -177,7 +177,7 @@ class GeneralOne:
                 #Vesicle has been undocked to RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=0.65+ 0.35*math.exp(self.ep*self.t)
+                ch=0.3252+ 0.6748*math.exp(self.ep*self.t)
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400

@@ -29,10 +29,10 @@ def main():
     alpr= 0.0025
     #beta=float(raw_input("Enter Beta Value: \t"))
     beta=1.0/5.0
-    lambd=0.0310
+    lambd=0.0621
     gamma=0.2*f
-    delta=1.0/120.0
-    ep=(lambd/(gamma*(gamma+ lambd)))*((gamma)**2 + (ppr*delta)*(gamma+lambd))
+    delt=1.0/120.0
+    ep=(lambd/(gamma*(gamma+ lambd)))*((gamma)**2 + (ppr*delt)*(gamma+lambd))
     #delta= float(raw_input("Enter Undocking Rate Value: \t"))
     
     k= float(raw_input("Enter K Value: \t"))
