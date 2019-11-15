@@ -30,17 +30,20 @@ class PointthreeHz:
         self.x=ran.choice(self.xrange)        #Choose one RRP size at random from xrange
         self.x=5
         self.trps=30                        #Size of TRP
-        self.x2_low=0.10                    #Lower limit on full scale fusion (but why such a value??)
+        self.x2_low=0.00                    #Lower limit on full scale fusion (but why such a value??)
         self.x2_stepsize=0.01
-        self.x2_high=0.19                   #Upper limit on full scale fusion
+        self.x2_high=0.20                   #Upper limit on full scale fusion
         self.x2=ran.choice(PointthreeHz.x2range(self))            #Chosen extent of full scale fusion
-        self.x2= 0.15
+        self.x2= 0.00
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
         self.gamma= -0.06                                    #Look up the model for meanings of specific parameters
-        self.delta=-1.0/120                             #Stevens & Murphy, 2018
+        self.sdelta=-1.0/120                             #Stevens & Murphy, 2018
+        self.delta=-math.log(2)/0.9                  #Assuming time constant of 0.9s to perform K&R.
+        self.delta_pr= -math.log(2)*((1/0.9)-(1/2.5))            #Amount of 
         self.lambd= -0.00406
-        self.alphpr= -0.0025
-        self.ep= ((self.gamma+2*self.delta)*self.lambd)/(self.gamma+self.lambd)
+        self.alphpr= -0.00669
+        self.ep= self.lambd*((self.gamma**2)+self.sdelta*(self.gamma+self.lambd))/(self.gamma*(self.gamma+self.lambd))
+        print "Epsilon:\t %6.5f" %(self.ep)
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         self.tracker=np.ones(self.trps)                     #Setting up tracker for individual vesicles with each element containing initial fluorescence.
         self.t=0              #Initial time
@@ -76,10 +79,11 @@ class PointthreeHz:
         
     def rcp_rrp(self):                     #Determines how many vesicles have moved out from RCP to RRP based on kinetic data.
         global eptrack
-        retain= (self.trps-self.x)*(0.92+ 0.08*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(0.93+ 0.07*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (eptrack-retain >=1):
+            print "Kookoo"
             m=self.trps-eptrack         #Notes the vesicle number that will undergo transit
             k=int(eptrack-math.ceil(retain))        #In the event that there are more than one vesicles making the transit.
             print "k:",k
@@ -97,7 +101,7 @@ class PointthreeHz:
                 #Vesicle has been undocked to RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=0.92+ 0.08*math.exp(self.ep*m)
+                ch=0.93+ 0.07*math.exp(self.ep*m)
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
@@ -107,14 +111,14 @@ class PointthreeHz:
         for y in range(self.trps):
             if (self.pref[y,0]==400):       #Checkes whether a vesicle is in the RRP.
                 m=self.t - self.pref[y,1]        #Notes the amount of time a vesicle has spent in the RRP
-                ch=math.exp((self.delta*m))
+                ch=math.exp((self.sdelta*m))
                 if( ran.random() > ch):
                     #Vesicle is undocked from RRP to RCP
                     self.pref[y,0]=0
                     self.pref[y,1]=self.t   #Updating time of entry to RCP.
                     print "BC"
                     continue #Move to next iteration
-                    print "CD"
+                    
                 ch=math.exp((self.gamma*m))
                 if( ran.random() > ch):              #Fusion has taken place.
                    print "Ganfu!"
@@ -128,12 +132,12 @@ class PointthreeHz:
                         elif (chec > self.x2):            # K&R fusion has taken place.
                             self.pref[y,0]=100
                             #self.tracker[y]*= math.exp(self.deprt*0.1*9)
-                            self.tracker[y]*= math.exp(self.deprt*0.1*ran.choice(range(6,10)))
+                            self.tracker[y]*= math.exp(self.deprt*0.1*9)
                             '''Taking time of kiss and run to be 0.6-0.9, calculating amount of fluorescence
                             discharged and updating accordingly.'''
                    else:                                #Refusion has taken place
                         self.pref[y,0]=100
-                        self.tracker[y]*= math.exp(self.deprt*0.1*ran.choice(range(6,10)))
+                        self.tracker[y]*= math.exp(self.deprt*0.1*9)
                         
                    self.pref[y,1]= self.t     #Update the time parameter to reflect fusion
                    self.pref[y,2]+=1        #Notes the number of times fusion has taken place.
@@ -141,15 +145,17 @@ class PointthreeHz:
         
     def endo(self):  #Checks whether vesicle is endocytosed and updates parameters accordingly.
         for y in range(self.trps):
-            m=self.pref[y,1]
-            if( self.pref[y,0]==100 and (m+0.9-self.t)<self.dt):
+            m=self.t - self.pref[y,1]
+            ch1=math.exp((self.delta*m))
+            ch2=math.exp(((math.log(2)/20.0)*m))
+            if( self.pref[y,0]==100 and ran.random() > ch1):
                 #K&R vesicle is endocytosed.
                 self.pref[y,0]=300          
-                self.pref[y,1]+=0.9         #Time of entering endocytosed compartment is updated.
-            elif (self.pref[y,0]==200 and (m+20-self.t)<self.dt):
+                self.pref[y,1]+=m         #Time of entering endocytosed compartment is updated.
+            elif (self.pref[y,0]==200 and ran.random() > ch2):
                 #Full fusion vesicles are endocytosed
                 self.pref[y,0]=300          
-                self.pref[y,1]+=20         #Time of entering endocytosed compartment is updated.
+                self.pref[y,1]+=m         #Time of entering endocytosed compartment is updated.
         
     def priming(self):  #Checks whether endocytosed vesicle is primed and docked and updates parameters accordingly.
         for y in range(self.trps):
@@ -186,7 +192,7 @@ class PointthreeHz:
         pop, pco = curve_fit(self.f, fm143[:,0], fm143[:,1], bounds=([15.0,0,0],[30.0,15.0, 0.05]))
         plt.plot(fm143[:,0], self.f( fm143[:,0], *pop), 'c--', label='FM Fit: %5.4f + %5.4f*e^(-%5.4fx)\n' % tuple(pop))
         #Plotting FM1-43 data.
-        a=-self.alphpr; g=-self.gamma; d=-self.delta
+        a=-self.alphpr; g=-self.gamma; d=-self.sdelta
         if (os.path.isdir("t_%f_t" %(self.dt))==False):
             os.mkdir("t_%f_t" %(self.dt))
         #Making various directories to store results, if they do not exist to begin with.

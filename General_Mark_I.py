@@ -12,7 +12,6 @@ import os
 import random as ran
 from scipy.optimize import curve_fit
 
-eptrack=0
 
 
 '''
@@ -94,7 +93,6 @@ For 30 Hz:
 class GeneralOne:
     
     def __init__(self):
-        global eptrack
         self.xrange=np.array([5,6,7,8,9,10])  #Possible values that RRP size can attain
         self.x=ran.choice(self.xrange)        #Choose one RRP size at random from xrange
         self.x=5
@@ -114,7 +112,7 @@ class GeneralOne:
         self.alph=-0.02809
         self.alphpr= -0.0025
         self.beta= -0.1667
-        self.ppr=0.5
+        self.ppr=0.9
         self.epold= ((self.gamma+2*self.delta)*self.lambd)/(self.gamma+self.lambd)
         print "Old Epsilon:\t%f" %(self.epold)
         self.ep= (self.lambd/(self.gamma*(self.gamma+ self.lambd)))*((self.gamma)**2 + (self.ppr*self.delta)*(self.gamma+self.lambd))
@@ -128,7 +126,7 @@ class GeneralOne:
         ("100" for k&r, "200" for full fusion, "300" for endocytosed, "400" for RRP, "500" for Active RCP, "0" for RCP unfused), 
         2nd column noting exact time of this occuring and the 3rd one noting the number of such consecutive fusions.'''
         self.pref[0:self.x,0]=400
-        eptrack=self.trps-self.x                    #Notes number of vesicles in RCP at the beginning
+        self.eptrack=self.trps-self.x                    #Notes number of vesicles in RCP at the beginning
         self.fsum=[]                        #Measures total fluorescence at each time step.
         self.rrpsiz=[]
         self.endsiz=[]
@@ -155,20 +153,20 @@ class GeneralOne:
         self.fluores()
         
     def lrcp_rrp(self):                     #Determines how many vesicles have moved out from unfused RCP to RRP based on kinetic data.
-        global eptrack
+
         retain= (self.trps-self.x)*(0.3252+ 0.6748*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
-        if (eptrack-retain >=1):
-            m=self.trps-eptrack         #Notes the vesicle number that will undergo transit
-            k=int(eptrack-math.ceil(retain))        #In the event that there are more than one vesicles making the transit.
+        if (self.eptrack-retain >=1):
+            m=self.trps-self.eptrack         #Notes the vesicle number that will undergo transit
+            k=int(self.eptrack-math.ceil(retain))        #In the event that there are more than one vesicles making the transit.
             print "k:",k
             for i in range(0,k):
                 a=int(m+i)
                 print "a:",a
                 self.pref[a,0]=400          #Change tag of vesicle to RRP
                 self.pref[a,1]=self.t       #Change timing to reflect entry to RRP
-            eptrack=math.ceil(retain)       #Update eptrack to reflect current number of unfused vesicles
+            self.eptrack=math.ceil(retain)       #Update eptrack to reflect current number of unfused vesicles
             for x in range(0,self.trps):
                 print self.pref[x,0],
                 
