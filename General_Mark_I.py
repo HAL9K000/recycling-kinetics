@@ -95,27 +95,28 @@ class GeneralOne:
     def __init__(self):
         self.xrange=np.array([5,6,7,8,9,10])  #Possible values that RRP size can attain
         self.x=ran.choice(self.xrange)        #Choose one RRP size at random from xrange
-        self.x=5
+        self.x=10
         self.trps=30                        #Size of TRP
-        self.x2_low=0.10                    #Lower limit on full scale fusion (but why such a value??)
+        self.x2_low=0.15                    #Lower limit on full scale fusion (but why such a value??)
         self.x2_stepsize=0.01
-        self.x2_high=0.20                   #Upper limit on full scale fusion
+        self.x2_high=0.38                   #Upper limit on full scale fusion
         self.x2=ran.choice(GeneralOne.x2range(self))            #Chosen extent of full scale fusion
         #self.x2=0.05
         print(self.x2)
         #self.x2= 0.15
         self.x1= 1 - self.x2                      #Chosen extent of kiss and run
-        self.gamma= -2.0                                    #Look up the model for meanings of specific parameters
-        self.delta=-1.0/120                             #Stevens & Murphy, 2018
-        #self.deltap=
-        self.lambd= -0.0310
-        self.alph=-0.02809
-        self.alphpr= -0.0025
+        self.gamma= -6.0                                   #Look up the model for meanings of specific parameters
+        self.sdelta=-1.0/120                             #Stevens & Murphy, 2018
+        #self.sdeltap=
+        self.lambd= -0.0610
+        #self.alph=-5.662
+        self.alphpr= -0.053356
         self.beta= -0.1667
-        self.ppr=0.9
-        self.epold= ((self.gamma+2*self.delta)*self.lambd)/(self.gamma+self.lambd)
+        self.delta= -math.log(2)/0.9
+        self.ppr=0.5
+        self.epold= ((self.gamma+2*self.sdelta)*self.lambd)/(self.gamma+self.lambd)
         print "Old Epsilon:\t%f" %(self.epold)
-        self.ep= (self.lambd/(self.gamma*(self.gamma+ self.lambd)))*((self.gamma)**2 + (self.ppr*self.delta)*(self.gamma+self.lambd))
+        self.ep= (self.lambd/(self.gamma*(self.gamma+ self.lambd)))*((self.gamma)**2 + (self.ppr*self.sdelta)*(self.gamma+self.lambd))
         print "Epsilon:\t%f" %(self.ep)
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         self.tracker=np.ones(self.trps)                     #Setting up tracker for individual vesicles with each element containing initial fluorescence.
@@ -123,15 +124,20 @@ class GeneralOne:
         self.dt=1          # Chosen as time step.
         self.pref=np.zeros([self.trps,4])
         '''Keeps track of changes taking place in vesicles, with 1st column storing kind of fusion 
-        ("100" for k&r, "200" for full fusion, "300" for endocytosed, "400" for RRP, "500" for Active RCP, "0" for RCP unfused), 
+        ["100" for k&r, "200" for full fusion, "300" for endocytosed ("301" for K&R, "302" for full fusion), 
+        "400" for RRP, "500" for Active RCP, "0" for RCP unfused], 
         2nd column noting exact time of this occuring and the 3rd one noting the number of such consecutive fusions.'''
         self.pref[0:self.x,0]=400
         self.eptrack=self.trps-self.x                    #Notes number of vesicles in RCP at the beginning
         self.fsum=[]                        #Measures total fluorescence at each time step.
         self.rrpsiz=[]
         self.endsiz=[]
+        self.fussiz=[]
+        self.rcpsiz=[]
         self.ftime=[]
-        self.str="10 Hz"             #For the purposes of making documentation easier.
+        self.str="30 Hz"             #For the purposes of making documentation easier.
+        self.a=0.49079
+        self.b=0.50920
         
     def controlpanel(self):
         print "RRP Size :=", self.x, "\tx2 :=", self.x2 ,"\nInitially.\n"
@@ -142,7 +148,7 @@ class GeneralOne:
             self.t+=self.dt
         for x in self.pref:
             print x
-        GeneralOne.accountancy(self)
+        self.accountancy()
         
     def updateparam(self):
         self.lrcp_rrp()
@@ -154,7 +160,7 @@ class GeneralOne:
         
     def lrcp_rrp(self):                     #Determines how many vesicles have moved out from unfused RCP to RRP based on kinetic data.
 
-        retain= (self.trps-self.x)*(0.3252+ 0.6748*math.exp(self.ep*self.t))
+        retain= (self.trps-self.x)*(self.a + self.b*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (self.eptrack-retain >=1):
@@ -175,7 +181,7 @@ class GeneralOne:
                 #Vesicle has been undocked to RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=0.3252+ 0.6748*math.exp(self.ep*self.t)
+                ch=self.a+ self.b*math.exp(self.ep*self.t)
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
@@ -185,8 +191,8 @@ class GeneralOne:
         for y in range(self.trps):
             if (self.pref[y,0]==400):       #Checkes whether a vesicle is in the RRP.
                 m=self.t - self.pref[y,1]        #Notes the amount of time a vesicle has spent in the RRP
-                ch=math.exp((self.delta*m))
-                #ch1=math.exp((self.deltap*m))
+                ch=math.exp((self.sdelta*m))
+                #ch1=math.exp((self.sdeltap*m))
                 if( ran.random() > ch):
                     #Vesicle is undocked from RRP......
                     
@@ -215,7 +221,7 @@ class GeneralOne:
                    print "CD!"
                    chec=ran.random()
                    if (chec <= self.x2):           #Full scale fusion has taken place.
-                       print "Bo"
+                       print "Carpe"
                        self.pref[y,0]=200
                        self.tracker[y]=0                #Setting fluorescence parameter to be 0
                    elif (chec > self.x2):            # K&R fusion has taken place.
@@ -230,28 +236,37 @@ class GeneralOne:
             else: continue
     
     def endo(self):   #Checks whether vesicle is endocytosed and updates parameters accordingly.
+        print "Yuva"
         for y in range(self.trps):
-            m=self.pref[y,1]
-            if( self.pref[y,0]==100 and (m+0.9-self.t)<self.dt):
+            m=self.t - self.pref[y,1]
+            ch1=math.exp((self.delta*m))
+            ch2=math.exp((-(math.log(2)/20.0)*m))
+            if( self.pref[y,0]==100 and ran.random() > ch1):
+                print " Harrappa"
                 #K&R vesicle is endocytosed.
-                self.pref[y,0]=300          
-                self.pref[y,1]+=0.9         #Time of entering endocytosed compartment is updated.
-            elif (self.pref[y,0]==200 and (m+20-self.t)<self.dt):
+                self.pref[y,0]=301          
+                self.pref[y,1]+=m         #Time of entering endocytosed compartment is updated.
+                
+            elif (self.pref[y,0]==200 and ran.random() > ch2):
                 #Full fusion vesicles are endocytosed
-                self.pref[y,0]=300          
-                self.pref[y,1]+=20         #Time of entering endocytosed compartment is updated.
+                self.pref[y,0]=302          
+                self.pref[y,1]+=m         #Time of entering endocytosed compartment is updated.
+                print  "Borat"
                 
     def priming(self):  #Checks whether endocytosed vesicle is primed and updates parameters accordingly.
         for y in range(self.trps):
-            if (self.pref[y,0]==300):
-                #Vesicle is in endocytosed compartment.
+            if (self.pref[y,0]==301):
+                # K&R Vesicle is in endocytosed compartment.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle as endocytosed.
                 ch=math.exp((self.alphpr*m))
                 if (ran.random()>ch):
-                    #Vesicle is primed and docked at RRp
+                    #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
                     self.pref[y,1]=self.t   #Updating time of entry to RRP.
                     continue
+            if (self.pref[y,0]==302):
+                #Full scale fusion vesicle is in endocytosed compartment.
+                m=self.t-self.pref[y,1]         #Notes the time spent by vesicle as endocytosed.
                 ch=math.exp((self.alph*m))
                 if (ran.random()>ch):
                     #Vesicle is primed and docked at ARCP
@@ -271,15 +286,21 @@ class GeneralOne:
            
     
     def fluores(self):
-        f=0; rrp=0 ; end=0
+        f=0; rrp=0 ; end=0 ; arcp=0; fused=0
         for y in range(self.trps):
             f+=self.tracker[y]
             if (self.pref[y,0]==400):               #Measures RRP size at each step
                 rrp+=1
-            elif (self.pref[y,0]==300):             #Measures endocytosed pool size at each step.
+            elif (self.pref[y,0]==301 or self.pref[y,0]==302):             #Measures endocytosed pool size at each step.
                 end+=1
+            elif (self.pref[y,0]==500):               #Measures RRP size at each step
+                arcp+=1
+            elif (self.pref[y,0]==100 or self.pref[y,0]==200):               #Measures fused pool size at each step
+                fused+=1
         self.rrpsiz.append(rrp)
         self.endsiz.append(end)
+        self.fussiz.append(fused)
+        self.rcpsiz.append(arcp)
         self.fsum.append(f)
         self.ftime.append(self.t)
         
@@ -297,7 +318,7 @@ class GeneralOne:
         pop, pco = curve_fit(self.f, fm143[:,0], fm143[:,1], bounds=([10.0,0,0],[30.0,20.0, 0.05]))
         plt.plot(fm143[:,0], self.f( fm143[:,0], *pop), 'c--', label='FM Fit: %5.4f + %5.4f*e^(-%5.4fx)\n' % tuple(pop))
         #Plotting FM1-43 data.
-        a=-self.alph; g=-self.gamma; d=-self.delta
+        a=-self.alph; g=-self.gamma; d=-self.sdelta
         if (os.path.isdir("t_%f_t" %(self.dt))==False):
             os.mkdir("t_%f_t" %(self.dt))
         #Making various directories to store results, if they do not exist to begin with.
@@ -343,6 +364,18 @@ class GeneralOne:
         plt.ylabel("Endocytosed Pool Size")
         plt.xlabel("Time")
         plt.savefig("Endo.png",dpi=200)
+        plt.show()
+        plt.close()
+        plt.plot(self.ftime , self.rcpsiz, 'ko', markerfacecolor='none', markeredgecolor='k')
+        plt.ylabel("Active RCP Size")
+        plt.xlabel("Time")
+        plt.savefig("Active RCP.png",dpi=200)
+        plt.show()
+        plt.close()
+        plt.plot(self.ftime , self.fussiz, 'ko', markerfacecolor='none', markeredgecolor='k')
+        plt.ylabel("Fused Pool Size")
+        plt.xlabel("Time")
+        plt.savefig("Fused Pool.png",dpi=200)
         plt.show()
         plt.close()
         

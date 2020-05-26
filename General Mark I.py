@@ -60,7 +60,7 @@ class GeneralOne:
             self.t+=self.dt
         for x in self.pref:
             print x
-        GeneralOne.accountancy(self)
+        self.accountancy()
         
     def updateparam(self):
         self.lrcp_rrp()
