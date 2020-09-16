@@ -132,12 +132,15 @@ class GeneralTwo(GeneralOne):
         
         for r in range(0,self.x):
             self.pref[r,3]= ran.random() #Generating random number for these beauts.
+            
+        for r in range(self.x,self.trps):
+            self.pref[r,3]= ran.random() #Generating random number for these beauts
         
     def lrcp_rrp(self):                     #Determines how many vesicles have moved out from unfused RCP to RRP based on kinetic data.
     
         print "Mozart"
 
-        retain= (self.trps-self.x)*(self.a+ self.b*math.exp(self.ep*self.t))
+        '''retain= (self.trps-self.x)*(self.a+ self.b*math.exp(self.ep*self.t))
         #print "Retain:", retain
         # retain documents how many TRP vesicles haven't made the rcp-rrp transit at a particular time.
         if (self.eptrack-retain >=1):
@@ -152,14 +155,28 @@ class GeneralTwo(GeneralOne):
                 self.pref[a,3]=ran.random()
             self.eptrack=math.ceil(retain)       #Update eptrack to reflect current number of unfused vesicles
             for x in range(0,self.trps):
-                print self.pref[x,0],
+                print self.pref[x,0],'''
                 
         for y in range(self.trps):
+            
+            if (self.pref[y,0]==0 and self.pref[y,1] == 0):
+                #Vesicle has never left Latent RCP even once.
+                print "Saheb Bibi Golam"
+                
+                m=self.t #Time spent by Vesicle in Latent RCP.
+                
+                ch=self.a+ self.b*math.exp(self.ep*self.t)
+                if (self.pref[y,3]>ch):
+                    #Vesicle is primed and docked at RRP
+                    self.pref[y,0]=400
+                    self.pref[y,1]=self.t   #Updating time of entry to RRP.
+                    self.pref[y,3]=ran.random()
+            
             if (self.pref[y,0]==0 and self.pref[y,1]>0):
                 #Vesicle has been undocked to  Latent RCP.
                 m=self.t-self.pref[y,1]         #Notes the time spent by vesicle in RCP.
                 
-                ch=self.a+ self.b*math.exp(self.ep*self.t)
+                ch=self.a+ self.b*math.exp(self.ep*m)
                 if (self.pref[y,3]>ch):
                     #Vesicle is primed and docked at RRP
                     self.pref[y,0]=400
@@ -208,10 +225,14 @@ class GeneralTwo(GeneralOne):
                    elif (chec > self.x2):            # K&R fusion has taken place.
                         self.pref[y,0]=100
                         #self.tracker[y]*= math.exp(self.deprt*0.1*9)
-                        self.tracker[y]*= math.exp(self.deprt*0.1*ran.choice(range(6,10)))
                         
-                        self.pref[y,3]=ran.uniform(0.42, 1) 
-                        #K&R vesicle  must not spend more than 2 second docked at the membrane
+                        
+                        self.pref[y,3]=ran.uniform(0.32, 0.68) 
+                        #K&R vesicle  must not spend more than (1.31) 2 seconds docked at the membrane or less than 0.45 s
+                        # With a mean of 0.8 seconds docked at the membrane
+                        t_calc= (math.log(self.pref[y,3])/self.delta)
+                        
+                        self.tracker[y]*= math.exp(self.deprt*t_calc)
                         
                    self.pref[y,1]= self.t     #Update the time parameter to reflect fusion
                    
@@ -322,8 +343,8 @@ class GeneralTwo(GeneralOne):
             self.x2_low=0.00
             self.x2_high=0.02
             
-            self.a=0.65587
-            self.b=0.2491
+            self.a=0.66587
+            self.b=0.3341
         
         elif f==3:
             self.lambd= -0.0132
@@ -360,8 +381,8 @@ class GeneralTwo(GeneralOne):
             self.x2_high=0.36                   #Upper limit on full scale fusion
             self.x=10
             
-            self.a=0.49920                  #Coefficients of the exponential function used to 
-            self.b=0.50070
+            self.a=0.50920                  #Coefficients of the exponential function used to 
+            self.b=0.49070
             
             
         self.str= str(f)+" Hz"             #For the purposes of making documentation easier.
@@ -373,7 +394,7 @@ class GeneralTwo(GeneralOne):
         
         self.epold= ((self.gamma+2*self.sdelta)*self.lambd)/(self.gamma+self.lambd)
         print "Old Epsilon:\t%f" %(self.epold)
-        self.ep= (self.lambd/(self.gamma*(self.gamma+ self.lambd)))*((self.gamma)**2 + (self.ppr*self.sdelta)*(self.gamma+self.lambd))
+        self.ep= (self.lambd/(self.gamma*(self.gamma+ self.lambd)))*((self.gamma)**2 + ((1 - self.ppr)*self.sdelta)*(self.gamma+self.lambd))
         print "Epsilon:\t%f" %(self.ep)
         self.deprt= -math.log(2)/2.5                        #Chosen rate of departitioning of fm1-43 dye ( based on 2.5 s halftime)
         

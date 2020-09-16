@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import os
 import random as ran
 import pandas as pan
-import seaborn as sea
+import seaborn
 from scipy.optimize import curve_fit
 from General_Mark_II import GeneralTwo
 
@@ -133,14 +133,21 @@ class MultiPlotter(GeneralTwo):
         self.ftime=[]
         
         
-        self.fmean=[] #Stores fluorescent means for all fifty iterations
-        self.fsd=[]     #
+        self.fmean=[] #Stores fluorescent means for all  trials
+        self.fsd=[]     #Stores fluorescent SDs for all  trials
+        
+        self.fm143sd= 0.5 #Check statistics() function. Used to define spread around experimental fm143 data.
         
         self.masterbinder={} #Empty dictionary that stores a lot of collated data
         
+        self.trials = int(raw_input("Enter number of trials that you want:\t"))
+        # Number of trials to be initiated
         
         for r in range(0,self.x):
             self.pref[r,3]= ran.random() #Generating random number for these beauts.
+            
+        for r in range(self.x,self.trps):
+            self.pref[r,3]= ran.random() #Generating random number for these beauts
             
         self.sanitizer()
         
@@ -149,12 +156,11 @@ class MultiPlotter(GeneralTwo):
         
         self.counter=0
         
-        for x in range(0,35):
+        for x in range(0,self.trials):
             self.counter+=1
             #50 simulations to be performed in total.
             self.controlpanel()
             print "Hogwarts"
-            self.counter+=1
             
         self.statistics()  #Makes requisite plots at the end.
         
@@ -211,13 +217,22 @@ class MultiPlotter(GeneralTwo):
         a,b =fm143.shape
         
         #Stores data related to FM143 dye.
-        self.masterbinder["Time"].extend(fm143[:,0])
-        self.masterbinder["Total Fluorescence"].extend(fm143[:,1])
-        
-        
-        
         
         for x in range(0,a):
+            fm143_gauss = np.random.normal(loc=fm143[x,1], scale= self.fm143sd, size= self.trials)
+            # fm143_gauss stores 35 samples drawn from a random distribution with mean = fm143[x,1] & sd = scale.
+            print "Size of fm143_gauss is:\t %d" %(fm143_gauss.size)
+            print fm143_gauss
+            for y in range(0, fm143_gauss.size):
+                self.masterbinder["Time"].append(fm143[x,0])
+                #Stores time point associated with FM143 datapoint
+            self.masterbinder["Total Fluorescence"].extend(fm143_gauss)
+            #Stores Gaussian data point in it's full glory, alongside it's spread
+        
+        
+        b= a*self.trials        #Used to fill in the remaining elements in the masterbinder for FM143 data.
+        
+        for x in range(0,b):
             self.masterbinder['Type'].append(1)         # 1 represents type FM143
             self.masterbinder["RRP Size"].append(-1)
             self.masterbinder["Endoctosed Pool Size"].append(-1)
@@ -243,26 +258,28 @@ class MultiPlotter(GeneralTwo):
         
         header_text = "Trial Num,Time,Total Fluorescence,RRP Size,Endoctosed Pool Size,Fused Pool Size,Type"
         
-        np.savetxt('Binder %s.csv' %(self.str), datasaver, delimiter=",", header=header_text,)
+        np.savetxt('Binder De Novo %s.csv' %(self.str), datasaver, delimiter=",", header=header_text,)
         
-        '''jailkeeper= pan.DataFrame(self.masterbinder)
+        jailkeeper= pan.DataFrame(self.masterbinder)
         
-        g= sea.lineplot(x="Time", y="Total Fluorescence",hue="Type", estimator='mean', ci='sd' ,data=jailkeeper)
+        print seaborn.__version__
+        
+        '''g= seaborn.lineplot(x="Time", y="Total Fluorescence",hue="Type", estimator='mean', ci='sd' ,data=jailkeeper)
         plt.ylim(0,30)
         
         plt.savefig("%s Cumulative Plot.png" %(self.str), dpi=300)
-        #plt.show()
-        #plt.close()'''
+        plt.show()
+        plt.close()'''
         
         
         
-        popt, pcov = curve_fit(self.f, list(range(0,800)), self.fmean, sigma= self.fsd, bounds=([5.0,0,0],[25.0,25.0, 0.05]))
+        '''popt, pcov = curve_fit(self.f, list(range(0,800)), self.fmean, sigma= self.fsd, bounds=([5.0,0,0],[25.0,25.0, 0.05]))
         xdata=np.array(list(range(0,800)))
         
         plt.plot(xdata, self.f(xdata, *popt), 'm--', label='Th Fit: %5.4f + %5.4f*e^(-%5.4fx)' % tuple(popt))
         plt.savefig("%s Cumulative Plot Alt.png" %(self.str), dpi=300)
         plt.show()
-        plt.close()
+        plt.close()'''
         
         
         
@@ -278,6 +295,8 @@ class MultiPlotter(GeneralTwo):
             
     def sanitizer(self): 
             # Santitizes and resets all variables to their default (initial) values. Should only be used at the beginning and ends of runs.
+            
+            ran.seed()
             
             self.x2=ran.choice(self.x2range())            #Chosen extent of full scale fusion
             #self.x2=0
@@ -300,6 +319,9 @@ class MultiPlotter(GeneralTwo):
             
             for r in range(0,self.x):
                 self.pref[r,3]= ran.random() #Generating random number for these beauts.
+                
+            for r in range(self.x,self.trps):
+                self.pref[r,3]= ran.random() #Generating random number for these beauts
                 
                 
 obj=MultiPlotter()    

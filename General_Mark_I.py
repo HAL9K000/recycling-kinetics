@@ -319,10 +319,10 @@ class GeneralOne:
         plt.plot(fm143[:,0], self.f( fm143[:,0], *pop), 'c--', label='FM Fit: %5.4f + %5.4f*e^(-%5.4fx)\n' % tuple(pop))
         #Plotting FM1-43 data.
         a=-self.alph; g=-self.gamma; d=-self.sdelta
-        if (os.path.isdir("t_%f_t" %(self.dt))==False):
-            os.mkdir("t_%f_t" %(self.dt))
+        if (os.path.isdir("t_%f_t_S" %(self.dt))==False):
+            os.mkdir("t_%f_t_S" %(self.dt))
         #Making various directories to store results, if they do not exist to begin with.
-        os.chdir("t_%f_t" %(self.dt))
+        os.chdir("t_%f_t_S" %(self.dt))
         if (os.path.isdir("alp_%f_g_%f_d_%f" %(a, g, d))==False):
             os.mkdir("alp_%f_g_%f_d_%f" %(a, g, d)) 
         os.chdir("alp_%f_g_%f_d_%f" %(a, g, d))

@@ -1,0 +1,9 @@
+# A Git Ignore File for Vesicle Recycling Dynamics Project
+
+Plot/MultiPlot/
+
+Machine_Readable_Data/fw_*/
+
+*.png
+
+*.csv
